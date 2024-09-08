@@ -12,7 +12,7 @@ struct MovieListView: View {
     var body: some View {
         HStack {
             CMPRemoteImage(url: movieData.poster ?? "")
-                .padding()
+                .frame(width: 80)
             VStack(alignment: .leading) {
                 Text(movieData.title ?? "")
                     .font(.title2)

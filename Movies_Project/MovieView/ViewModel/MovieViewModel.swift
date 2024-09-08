@@ -97,6 +97,7 @@ class MovieViewModel: ObservableObject {
                 if searchText.isEmpty {
                     inputModel[index].allMovies = modelData
                 } else {
+                    updateSection(index)
                     inputModel[index].allMovies = modelData.filter { movie in
                         (movie.title?.lowercased() ?? "").contains(searchText.lowercased()) ||
                         (movie.genre?.lowercased() ?? "").contains(searchText.lowercased()) ||

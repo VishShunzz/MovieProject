@@ -42,7 +42,7 @@ struct MovieModel: Decodable {
 }
 
 // MARK: - Rating
-struct Rating: Codable {
+struct Rating: Decodable, Hashable {
     let source, value: String?
     
     enum CodingKeys: String, CodingKey {

@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  MovieView.swift
 //  Movies_Project
 //
 //  Created by Vishal  on 07/09/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct MovieView: View {
     @ObservedObject var viewModel = MovieViewModel()
     var body: some View {
         NavigationView {
@@ -38,7 +38,9 @@ struct ContentView: View {
                         } else {
                             ForEach(0..<(data.allMovies?.count ?? 0), id: \.self) { i in
                                 if (i < data.allMovies?.count ?? 0), let val = data.allMovies?[i] {
-                                    MovieListView(movieData: val)
+                                    NavigationLink(destination: MovieDetailView(viewModel: MovieDetailViewModel(movieData: val))) {
+                                        MovieListView(movieData: val)
+                                    }
                                 }
                             }
                             
@@ -53,12 +55,10 @@ struct ContentView: View {
         }
         .onAppear {
             viewModel.getInfo()
-        }
-        
-        
+        }        
     }
 }
 
 #Preview {
-    ContentView()
+    MovieView()
 }
