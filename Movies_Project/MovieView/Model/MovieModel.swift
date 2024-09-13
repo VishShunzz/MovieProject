@@ -9,7 +9,8 @@ import Foundation
 
 
 // MARK: - MovieModel
-struct MovieModel: Decodable {
+struct MovieModel: Decodable, Identifiable {
+    let id = UUID()
     let title, year, rated, released: String?
     let runtime, genre, director, writer: String?
     let actors, plot, language, country: String?
@@ -18,6 +19,16 @@ struct MovieModel: Decodable {
     let ratings: [Rating]?
     let metascore, imdbRating, imdbVotes, imdbID: String?
     let type: String?
+    var genreData: [String] {
+        genre?.components(separatedBy: ",") ?? []
+    }
+    var directorData: [String] {
+        director?.components(separatedBy: ",") ?? []
+    }
+    
+    var actorsData: [String] {
+        actors?.components(separatedBy: ",") ?? []
+    }
     
     enum CodingKeys: String, CodingKey {
             case title = "Title"

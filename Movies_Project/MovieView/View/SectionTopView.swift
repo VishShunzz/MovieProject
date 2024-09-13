@@ -22,4 +22,3 @@ struct SectionTopView: View {
         .contentShape(Rectangle()) // Makes the whole header tappable
     }
 }
-

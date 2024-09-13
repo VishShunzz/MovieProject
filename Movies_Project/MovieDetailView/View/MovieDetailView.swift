@@ -59,10 +59,6 @@ struct MovieDetailView: View {
                 // Custom Rating Selector
                 RatingSelector(rating: viewModel.movieData.ratings ?? [])
                 
-//                // Custom UI Control to Display Rating Value
-//                if !viewModel.selectedRatingSource.isEmpty {
-//                    RatingValueView(selectedSource: $viewModel.selectedRatingSource, rating: viewModel.movieData.ratings ?? [])
-//                }
             }
             .padding()
         }

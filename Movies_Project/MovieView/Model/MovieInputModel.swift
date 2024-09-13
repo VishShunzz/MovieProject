@@ -12,7 +12,7 @@ struct MovieInputModel: Identifiable {
     var isCollapse = true
     var type: ListType
     var val: [String?]?
-    var allMovies: [MovieModel]?
+    var selectedVal: Set<String> = []
 }
 
 enum ListType: String {

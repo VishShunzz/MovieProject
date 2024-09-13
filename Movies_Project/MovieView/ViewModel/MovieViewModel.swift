@@ -8,32 +8,42 @@
 import Foundation
 
 class MovieViewModel: ObservableObject {
-    private var modelData: [MovieModel] = []
-    @Published var searchText: String = "" {
-        didSet {
-            filterMovies()
-        }
-    }
+    var modelData: [MovieModel] = []
+    @Published var allMovies = false
+    @Published var showMovies = false
+    @Published var searchText: String = ""
     @Published var inputModel: [MovieInputModel] = []
+    var filteredMovies: [MovieModel] {
+        filterData()
+    }
     
+    /// To fetch the json information
     private func fetchData() {
         modelData = JsonDataLoaderFile.shared.loadJSONFromFile("movies", type: [MovieModel].self) ?? []
     }
     
+    /// To update the information with the View
     func getInfo() {
         fetchData()
-        let yearData = ["2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","20013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024"]
-        let genreData = ["Documentry", "Adventure", "Crime", "Thriller", "Drama", "Western", "Comedy", "Fantasy", "Sci-Fi", "Biography", "History", "Action", "Fantasy", "Family", "Sport", "Romance", "Animation"]
-        let directorData = removeDuplicateVal(modelData.map({$0.director}))
-        let actorsData = removeDuplicateVal(modelData.map({$0.actors}))
+        updateInputModel()
+    }
+    
+    /// Update the input model for view
+    private func updateInputModel() {
+        let smallestYear = Int(modelData.map({$0.year ?? ""}).min() ?? "0")
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let yearData = Array(smallestYear!...currentYear)
+        let yearStr = yearData.map { String($0) }
+        let genreData = removeDuplicateVal(modelData.flatMap({$0.genreData}))
+        let directorData = removeDuplicateVal(modelData.flatMap({$0.directorData}))
+        let actorsData = removeDuplicateVal(modelData.flatMap({$0.actorsData}))
         
-        inputModel.append(MovieInputModel(type: .year, val: yearData))
+        inputModel.append(MovieInputModel(type: .year, val: yearStr))
         inputModel.append(MovieInputModel(type: .genre, val: genreData))
         inputModel.append(MovieInputModel(type: .directors, val: directorData))
         inputModel.append(MovieInputModel(type: .actors, val: actorsData))
-        inputModel.append(MovieInputModel(isCollapse: false, type: .allMovies, allMovies: modelData))
+        inputModel.append(MovieInputModel(type: .allMovies))
     }
-    
     /// Expandable and collapse manage here
     /// - Parameter index: Section index value
     func updateSection(_ index: Int) {
@@ -59,57 +69,63 @@ class MovieViewModel: ObservableObject {
         return Array(data).sorted()
     }
     
-    func filterWithType( type: ListType, selectedVal: String) {
-        if let index = inputModel.firstIndex(where: {$0.type == .allMovies}) {
-            switch type {
-            case .year:
-                inputModel[index].allMovies = modelData.filter { movie in
-                    (movie.year?.lowercased() ?? "").contains(selectedVal.lowercased())
-                }
-            case .genre:
-                inputModel[index].allMovies = modelData.filter { movie in
-                    (movie.genre?.lowercased() ?? "").contains(selectedVal.lowercased())
-                }
-            case .directors:
-                inputModel[index].allMovies = modelData.filter { movie in
-                    (movie.director?.lowercased() ?? "").contains(selectedVal.lowercased())
-                }
-            case .actors:
-                inputModel[index].allMovies = modelData.filter { movie in
-                    (movie.actors?.lowercased() ?? "").contains(selectedVal.lowercased())
-                }
-            case .allMovies:
-                break
+    /// To update the filter information of checkmark
+    /// - Parameters:
+    ///   - type: Selected filter type (year, genre, director, actors)
+    ///   - selectedVal: Selected value from the filter type
+    func filterInfo( type: ListType, selectedVal: String) {
+        if let index = inputModel.firstIndex(where: {$0.type == type}) {
+            if inputModel[index].selectedVal.contains(selectedVal) {
+                inputModel[index].selectedVal.remove(selectedVal)
+            } else {
+                inputModel[index].selectedVal.insert(selectedVal)
             }
             inputModel[index].isCollapse = false
+            showMovies = true
         }
-        
         if let index = inputModel.firstIndex(where: {$0.type == type}) {
             updateSection(index)
         }
-        
     }
     
-    
-    // Function to filter movies based on search text
-        private func filterMovies() {
-            if let index = inputModel.firstIndex(where: {$0.type == .allMovies}) {
-                if searchText.isEmpty {
-                    inputModel[index].allMovies = modelData
-                } else {
-                    updateSection(index)
-                    inputModel[index].allMovies = modelData.filter { movie in
-                        (movie.title?.lowercased() ?? "").contains(searchText.lowercased()) ||
-                        (movie.genre?.lowercased() ?? "").contains(searchText.lowercased()) ||
-                        (movie.director?.lowercased() ?? "").contains(searchText.lowercased()) ||
-                        (movie.actors?.lowercased() ?? "").contains(searchText.lowercased())
-                    }
-                }
-            }
+    /// Filter movies list based on search text
+    /// - Returns: List of the filtered movies
+    private func filterByQueries() -> [MovieModel] {
+        return modelData.filter { movie in
+            (movie.title?.lowercased() ?? "").contains(searchText.lowercased()) ||
+            (movie.year?.lowercased() ?? "").contains(searchText.lowercased()) ||
+            (movie.genre?.lowercased() ?? "").contains(searchText.lowercased()) ||
+            (movie.director?.lowercased() ?? "").contains(searchText.lowercased()) ||
+            (movie.actors?.lowercased() ?? "").contains(searchText.lowercased())
         }
-}
-
-
-extension MovieViewModel {
+    }
     
+    /// Fetch filter data by checking all criteria (search text, year, genre, director, actors)
+    /// - Returns: List of the movies
+    private func filterData() -> [MovieModel] {
+        if searchText.isEmpty {
+            return modelData.filter { movie in
+                // Apply filters by checking all criteria (year, genre, director, actors)
+                let matchesYear = inputModel.first(where: { $0.type == .year })?.selectedVal.contains {
+                    selectedYear in movie.year?.lowercased() == selectedYear.lowercased()
+                } ?? true
+                
+                let matchesGenre = inputModel.first(where: { $0.type == .genre })?.selectedVal.contains {
+                    selectedGenre in movie.genreData.contains{$0.lowercased() == selectedGenre.lowercased()}
+                } ?? true
+                
+                let matchesDirector = inputModel.first(where: { $0.type == .directors })?.selectedVal.contains {
+                    selectedDirector in movie.directorData.contains{$0.lowercased() == selectedDirector.lowercased()}
+                } ?? true
+                
+                let matchesActors = inputModel.first(where: { $0.type == .actors })?.selectedVal.contains {
+                    selectedActor in movie.actorsData.contains{$0.lowercased() == selectedActor.lowercased()}
+                } ?? true
+                
+                return matchesYear || matchesGenre || matchesDirector || matchesActors
+            }
+        } else {
+            return filterByQueries()
+        }
+    }
 }
